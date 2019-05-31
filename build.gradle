@@ -1,0 +1,25 @@
+plugins {
+    id 'java'
+    id 'idea'
+}
+
+group 'com.fulmicotone'
+version 'v0.00.001'
+
+sourceCompatibility = 1.8
+
+repositories {
+    mavenCentral()
+}
+
+dependencies {
+    testCompile group: 'junit', name: 'junit', version: '4.12'
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-s3', version: '1.11.479'
+    implementation  group: 'com.amazonaws', name: 'aws-java-sdk-emr', version: '1.11.479'
+    implementation group: 'com.amazonaws', name: 'aws-java-sdk-datapipeline', version: '1.11.479'
+    implementation  group: 'com.amazonaws', name: 'aws-java-sdk-cloudwatch', version: '1.11.479'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.25'
+    implementation "com.evanlennick:retry4j:0.15.0"
+    testImplementation group: 'org.slf4j', name: 'slf4j-simple', version: '1.7.25'
+
+}

@@ -1,4 +1,4 @@
-package com.fulmicotone.aws.cluster.business.emr.business;
+package com.fulmicotone.aws.cluster.cross.api.spec.emr.business;
 
 import com.amazonaws.regions.Regions;
 import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
@@ -18,16 +18,18 @@ import com.fulmicotone.aws.cluster.cross.api.function.SupplierParameterizableEmr
 import com.fulmicotone.aws.cluster.cross.api.function.mytoawssdk.emr.FnMyEmrBuilderToRunJobFlowRequest;
 import com.fulmicotone.aws.cluster.cross.api.spec.cloudwatch.business.MyEMRIsIndleAlarm;
 import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.MyParams;
-import com.fulmicotone.aws.cluster.cross.api.spec.emr.MyEmrFilterActiveNameContains;
 import com.fulmicotone.aws.cluster.cross.api.spec.emr.TaskRunnerStep;
-import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.MyEMRFinder;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter.MyGetterEMRCluster;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter.filters.MyEMRClusterFilterActiveNameContains;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter.filters.generic.MyEMRStepsListRequest;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.function.FnGetEmrSteps;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.model.MyClusterSummaryDeep;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.model.MyEMRScaleUpPolicy;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.model.MyEMRThresholdBreakBehaviour;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Optional;
+import java.util.*;
 import java.util.function.Supplier;
 
 import static java.time.temporal.ChronoUnit.MILLIS;
@@ -43,7 +45,8 @@ import static java.time.temporal.ChronoUnit.MILLIS;
 public class MyFindOrCreateEmrObservableResource {
 
 
-    Logger log = LoggerFactory.getLogger(com.fulmicotone.aws.cluster.business.emr.business.MyFindOrCreateEmrObservableResource.class);
+
+    Logger log = LoggerFactory.getLogger(MyFindOrCreateEmrObservableResource.class);
 
     private final AmazonElasticMapReduce emrClient;
 
@@ -71,8 +74,11 @@ public class MyFindOrCreateEmrObservableResource {
 
     private final int millisDelay;
 
-
     private final RetryConfigBuilder retryConf;
+
+    private final MyEMRScaleUpPolicy scalePolicy;
+
+
 
     public MyFindOrCreateEmrObservableResource(AmazonElasticMapReduce emrClient,
                                                AmazonCloudWatch cloudWatchClient,
@@ -84,6 +90,7 @@ public class MyFindOrCreateEmrObservableResource {
                                                boolean installTaskRunner,
                                                int nRetry,
                                                int millisDelay,
+                                               MyEMRScaleUpPolicy policy,
                                                Tag[] tags,
                                                MyParams params,
                                                String... snsTopicArn) {
@@ -100,15 +107,12 @@ public class MyFindOrCreateEmrObservableResource {
         this.tags=tags;
         this.nRetry=nRetry;
         this.millisDelay=millisDelay;
-
-
-
-       this. retryConf = new RetryConfigBuilder()
+        this. retryConf = new RetryConfigBuilder()
                 .retryOnSpecificExceptions(InternalServerException.class)
                 .withMaxNumberOfTries(nRetry)
                 .withDelayBetweenTries(millisDelay, MILLIS)
                 .withRandomExponentialBackoff();
-
+        this.scalePolicy=policy;
 
     }
 
@@ -144,7 +148,14 @@ public class MyFindOrCreateEmrObservableResource {
                     .onFailureListener(s -> log.info("EMR Job Failed! All retries exhausted..."))
                     .afterFailedTryListener(s -> log.info("Try failed! Will try again in " + millisDelay + "ms."))
                     .build()
-                    .execute(() -> emrClient.runJobFlow(job).getJobFlowId()).getResult();
+                    .execute(() -> {
+                        try {
+                            return emrClient.runJobFlow(job).getJobFlowId();
+                        }catch (Exception e){
+                            log.error(e.toString());
+                            return null;
+                        }
+                    }).getResult();
 
             if (!Optional.ofNullable(jobFlowId).isPresent()) { throw  new Exception("creating cluster failed"); }
 
@@ -180,21 +191,32 @@ public class MyFindOrCreateEmrObservableResource {
 
 
 
+    public List<MyClusterSummaryDeep> getEnrichedClusterList(List<ClusterSummary> clusterSummaryList){
 
-    public ClusterSummary getLessBusyCluster(List<ClusterSummary> clusterSummaryList){
-        //todo
-
-        return null;
+        List<MyClusterSummaryDeep> re=new ArrayList<>();
+        clusterSummaryList.stream()
+                .map(MyEMRStepsListRequest::new)
+                .map(req->(MyEMRStepsListRequest)req.withStepStates(StepState.PENDING))
+                .forEach(req -> new CallExecutorBuilder<>()
+                        .config(retryConf.build())
+                        .onSuccessListener(s -> log.info("EMR Step List Success retrieved!"))
+                        .onFailureListener(s -> log.info("EMR Step List  All retries exhausted..."))
+                        .afterFailedTryListener(s -> log.info("Try failed! Will try again in " + millisDelay + "ms."))
+                        .build()
+                        .execute(() -> {
+                            ArrayList<StepSummary> r = new ArrayList<>();
+                            new FnGetEmrSteps().apply(emrClient)
+                                    .apply(req).apply(stepSummaries -> r.addAll(stepSummaries));
+                            re.add( new MyClusterSummaryDeep(req.getCw().get(),r));
+                            return null;
+                        }).getResult());
+        return re;
     }
 
 
     public Optional<String> run() {
 
-
-
-
         String jobFlowId = null;
-
         //FINDER BLOCK
         try {
 
@@ -203,55 +225,55 @@ public class MyFindOrCreateEmrObservableResource {
             String namePlusWG = String.join("_", resourceName, workerGroup);
 
             try {
-
                 log.info("find cluster active and contains in name: {}",namePlusWG);
+                log.info("scale policy: {}",scalePolicy.toString());
+
 
                 //find cluster
-                activeClusters = MyEMRFinder.EMRFinderBuilder.newOne(emrClient)
+                activeClusters = MyGetterEMRCluster.EMRFinderBuilder.newOne(emrClient)
                         .withMaxRetry(nRetry, millisDelay)
-                        .withFilterRequest(new MyEmrFilterActiveNameContains(workerGroup))
+                        .withFilterRequest(new MyEMRClusterFilterActiveNameContains(workerGroup))
                         .build()
                         .search();
-
             }catch (Exception e){ throw  new MyResourceGetException(e.toString()); }
-
                 //no clusters exist
                 if (activeClusters.size()==0) {
                     log.info("no cluster found. Create observable resource with alarm it!",namePlusWG);
-                    jobFlowId =createNewEmrCluster(namePlusWG);
+                    jobFlowId =createNewEmrCluster(namePlusWG+"_"+String.format("%02d", activeClusters.size()));
                 }else{
                     //there's clusters
-                    getLessBusyCluster(activeClusters);
+                    //enrich the cluster
+                    Optional<MyClusterSummaryDeep> lessBusyCluster = getEnrichedClusterList(activeClusters)
+                            .stream()//take less busy cluster //totest
+                            .min((o1, o2) -> o1.getStepSummaryList().size() < o2.getStepSummaryList().size() ? 0 : 1);
+                    //if the less busy cluster is up the treadshold
+                    if(scalePolicy.pendingStepsBreakThreshold(lessBusyCluster.get().getStepSummaryList().size())){
 
+                        log.info("less busy cluster {} break the threshold need to scale up!",lessBusyCluster
+                                .get().getClusterSummary().getId());
 
+                        //if can scale up
+                        if(scalePolicy.clusterOpenedBreakThreshold(activeClusters.size())==false){
+                            //scale up
+                            log.info("scale up committing new cluster");
+                            jobFlowId=createNewEmrCluster(namePlusWG+"_"+String.format("%02d", activeClusters.size()));
+                            //commit in the cluster less busy
+                        }else if(scalePolicy.getBehaviourOnClusterThreadsholdBreak()== MyEMRThresholdBreakBehaviour.commit_anyway)
+                        {
+                            log.info("we're reach the threshold limit cluster:{}. Can't scale up anymore",
+                                    activeClusters.size());
+                            jobFlowId=lessBusyCluster.get().getClusterSummary().getId();
+                        }else{
+                            log.info("we're reach the threshold limit cluster:{}. Can't scale up anymore step discarded");
+                        }
+                    }else{
 
+                        log.info("return less busy cluster that satisfy scale up policy.");
 
+                        jobFlowId=lessBusyCluster.get().getClusterSummary().getId();
+
+                    }
                 }
-
-/*
-            if(!optCluster.isPresent()) {
-                try {
-
-                    final String ji = jobFlowId;
-
-                    PutMetricAlarmResult alarmResponse =
-
-                            (PutMetricAlarmResult) new CallExecutorBuilder<>()
-                                    .config(retryConf.build())
-                                    .onSuccessListener(s -> log.info("EMR is Idle Alarm Creation Success!"))
-                                    .onFailureListener(s -> log.info("EMR is Idle Alarm All retries exhausted..."))
-                                    .afterFailedTryListener(s -> log.info("Try failed! Will try again in " + millisDelay + "ms."))
-                                    .build()
-                                    .execute(() -> cwClient.putMetricAlarm(new MyEMRIsIndleAlarm(ji,
-                                            indleLimitInSeconds,
-                                            2,
-                                            2,
-                                            snsTopicArn))).getResult();
-
-                } catch (Exception e) { throw new MyEMRIsIdleAlarmCreationException(e.toString()); }
-            }
-
- */
         }catch (MyEMRIsIdleAlarmCreationException| MyEMRResourceCreationException|MyResourceGetException e){
 
             if(Optional.ofNullable(jobFlowId).isPresent()) {
@@ -268,6 +290,9 @@ public class MyFindOrCreateEmrObservableResource {
                                 .terminateJobFlows(new TerminateJobFlowsRequest()
                                         .withJobFlowIds(ji))).getResult();
             }
+
+            log.error("error:"+e.toString());
+
 
         }
 
@@ -296,6 +321,10 @@ public class MyFindOrCreateEmrObservableResource {
         protected Tag[] tags;
         private int nMaxRetries;
         private int delayInMillis;
+        private int nMaxPendingSteps;
+        private int maxCluster;
+        private boolean wasteExceeses;
+        private MyEMRScaleUpPolicy scalePolicy;
 
 
         public T withResourceName(String resourceName) {
@@ -337,6 +366,13 @@ public class MyFindOrCreateEmrObservableResource {
             return (T) this;
         }
 
+        public T withScalePolicy(MyEMRScaleUpPolicy policy){
+
+            this.scalePolicy=policy;
+            return (T) this;
+        }
+
+
         public T withRetryStrategy(int maxRetries,int delayInMillis){
 
            this.nMaxRetries =maxRetries;
@@ -345,16 +381,20 @@ public class MyFindOrCreateEmrObservableResource {
         }
 
 
-        public com.fulmicotone.aws.cluster.business.emr.business.MyFindOrCreateEmrObservableResource build() {
+        public MyFindOrCreateEmrObservableResource build() {
             return
-                    new com.fulmicotone.aws.cluster.business.emr.business.MyFindOrCreateEmrObservableResource(emrClient,
+                    new MyFindOrCreateEmrObservableResource(
+                            emrClient,
                             cloudWatchClient,
                             emrClusterBuilder.get(),
                             resourceName,
-                            workerGroup, region,allowedIndlePeriod,
+                            workerGroup,
+                            region,
+                            allowedIndlePeriod,
                             installTaskRunner ,
-                           nMaxRetries,
+                            nMaxRetries,
                             delayInMillis,
+                            scalePolicy,
                             tags,
                             params,
                             snsTopicArn.toArray(new String[]{}));

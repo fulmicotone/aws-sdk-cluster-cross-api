@@ -1,12 +1,12 @@
-package com.fulmicotone.aws.cluster.cross.api.spec.emr.business;
+package com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter;
 
 import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
 import com.amazonaws.services.elasticmapreduce.model.ClusterSummary;
 import com.amazonaws.services.elasticmapreduce.model.InternalServerException;
 import com.evanlennick.retry4j.CallExecutorBuilder;
 import com.evanlennick.retry4j.config.RetryConfigBuilder;
-import com.fulmicotone.aws.cluster.cross.api.function.mytoawssdk.emr.FnGetEmrCluster;
-import com.fulmicotone.aws.cluster.cross.api.spec.emr.MyEmrFilterListRequest;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter.filters.generic.MyEMRClusterFilterListRequest;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.function.FnGetEmrCluster;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -16,18 +16,18 @@ import java.util.Objects;
 import static java.time.temporal.ChronoUnit.MILLIS;
 
 /** EMR FINDER WITH M OUT OF N **/
-public class MyEMRFinder {
+public class MyGetterEMRCluster {
 
-    Logger log= LoggerFactory.getLogger(MyEMRFinder.class);
+    Logger log= LoggerFactory.getLogger(MyGetterEMRCluster.class);
 
     private final AmazonElasticMapReduce emr;
     private final int nRetry;
     private final int delay;
 
-    private MyEmrFilterListRequest filterRequest;
+    private MyEMRClusterFilterListRequest filterRequest;
 
 
-    private MyEMRFinder(EMRFinderBuilder b){
+    private MyGetterEMRCluster(EMRFinderBuilder b){
 
         this.filterRequest=b.filterRequest;
        this.nRetry=b.nRetry;
@@ -70,7 +70,7 @@ public class MyEMRFinder {
     public static final class EMRFinderBuilder {
 
         private final AmazonElasticMapReduce emr;
-        private MyEmrFilterListRequest filterRequest;
+        private MyEMRClusterFilterListRequest filterRequest;
 
         private int nRetry;
         private int delayInMillis;
@@ -88,14 +88,14 @@ public class MyEMRFinder {
      }
 
 
-        public EMRFinderBuilder withFilterRequest(MyEmrFilterListRequest filterRequest) {
+        public EMRFinderBuilder withFilterRequest(MyEMRClusterFilterListRequest filterRequest) {
             this.filterRequest = filterRequest;
             return this;
         }
 
-        public MyEMRFinder build() {
+        public MyGetterEMRCluster build() {
             Objects.requireNonNull(filterRequest,"filter request is required!!!");
-            return new MyEMRFinder(this);
+            return new MyGetterEMRCluster(this);
         }
     }
 }

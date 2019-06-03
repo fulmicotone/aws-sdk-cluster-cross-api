@@ -1,10 +1,16 @@
 package com.fulmicotone.aws.cluster.cross.api;
 
+import com.amazonaws.auth.policy.actions.ElasticMapReduceActions;
+import com.amazonaws.regions.Regions;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
+import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.datapipeline.model.Field;
-import com.amazonaws.services.elasticmapreduce.model.ActionOnFailure;
-import com.amazonaws.services.elasticmapreduce.model.StepConfig;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
+import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
+import com.amazonaws.services.elasticmapreduce.model.*;
 import com.fulmicotone.aws.cluster.cross.api.builder.MyActivity;
 import com.fulmicotone.aws.cluster.cross.api.builder.MyCluster;
+import com.fulmicotone.aws.cluster.cross.api.function.SupplierParameterizableEmrBuilderWithSparkDefault;
 import com.fulmicotone.aws.cluster.cross.api.function.SupplierParameterizableEmrResourceBuilder;
 import com.fulmicotone.aws.cluster.cross.api.function.SupplierParametrizableSparkDefaultsConfig;
 import com.fulmicotone.aws.cluster.cross.api.function.my.FnGetUniqueResourcesFromActivities;
@@ -22,6 +28,11 @@ import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.MyPipelineObjectF
 import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.SparkDeployMode;
 import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.resource.ClusterHwConf;
 import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.resource.ClusterSecurityConf;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.MyFindOrCreateEmrObservableResource;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter.MyGetterEMRCluster;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter.filters.MyEMRClusterFilterActiveNameContains;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.model.MyEMRScaleUpPolicy;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.model.MyEMRThresholdBreakBehaviour;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;
@@ -30,10 +41,7 @@ import org.junit.runners.MethodSorters;
 
 import java.time.LocalDateTime;
 import java.time.temporal.ChronoUnit;
-import java.util.Arrays;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static java.time.ZoneOffset.UTC;
@@ -372,38 +380,6 @@ public class MyTest {
     }
 
 
-
-    @Test
-    public void test(){
-
-
-     /*   AmazonElasticMapReduce emr = AmazonElasticMapReduceClientBuilder.defaultClient();
-        AmazonCloudWatch cw = AmazonCloudWatchClientBuilder.defaultClient();
-
-
-
-        MyFindOrCreateEmrObservableResource findOrCreateEmrObservableResource= MyFindOrCreateEmrObservableResource
-                .BuilderFull
-                .newOne()
-                .withEmrClient(elasticMapReduceClient)
-                .withCloudWatchClient(cloudWatchClient)
-                .wuthEmrClusterBuilderSupplier(new SupplierParameterizableEmrBuilderWithSparkDefault())
-                .withParams(params)
-                .withRegion(Regions.US_EAST_1)
-                .withResourceName(clName)
-                .withWorkerGroup(workerGroup.getVal())
-                .addSnsTopicArn(AppProperties.getArnTopic(env, AppTopics.alarm_emr_idle))
-                .withIndleLimit(maxIdleTimeInSeconds)
-                .withTaskRunner(false)
-                .withRetryStrategy(10, 1000)
-                .withTags( new Tag("Billing", "ImportFile2Google"))
-                .build();*/
-
-
-
-
-
-    }
 
 
 

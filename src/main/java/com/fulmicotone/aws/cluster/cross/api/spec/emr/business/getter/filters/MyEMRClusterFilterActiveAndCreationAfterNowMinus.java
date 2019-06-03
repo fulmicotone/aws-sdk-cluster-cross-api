@@ -1,14 +1,15 @@
-package com.fulmicotone.aws.cluster.cross.api.spec.emr;
+package com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter.filters;
 
 import com.amazonaws.services.elasticmapreduce.model.ClusterState;
+import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter.filters.generic.MyEMRClusterFilterListRequest;
 
 import java.time.temporal.ChronoUnit;
 import java.util.Date;
 
-public class MyEmrFilterActiveAndCreationAfterNowMinus extends MyEmrFilterListRequest {
+public class MyEMRClusterFilterActiveAndCreationAfterNowMinus extends MyEMRClusterFilterListRequest {
 
 
-    public MyEmrFilterActiveAndCreationAfterNowMinus(int amount, ChronoUnit unit) {
+    public MyEMRClusterFilterActiveAndCreationAfterNowMinus(int amount, ChronoUnit unit) {
         super();
         withClusterStates(ClusterState.RUNNING,
                 ClusterState.BOOTSTRAPPING,

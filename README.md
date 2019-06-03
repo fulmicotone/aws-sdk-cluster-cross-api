@@ -3,6 +3,8 @@
 This SDK try to simplify and get a standard way to traits cluster between emr and data pipeline. 
 Is easy to create a pipeline  programmatically  using  the  Objects provided. 
 
+[![](https://jitpack.io/v/fulmicotone/aws-sdk-cluster-cross-api.svg)](https://jitpack.io/#fulmicotone/aws-sdk-cluster-cross-api)
+
 ## Models to compose
 
 - AWSAction
@@ -111,3 +113,4 @@ Is easy to create a pipeline  programmatically  using  the  Objects provided.
 - myPipelineService.createAndDefine(s3Key, myPipeline, null); required not null on parameters
 
 - when you define Default object the id must be Default 
+

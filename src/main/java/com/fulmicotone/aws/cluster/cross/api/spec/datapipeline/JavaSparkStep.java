@@ -7,6 +7,8 @@ import com.amazonaws.services.elasticmapreduce.model.StepConfig;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class JavaSparkStep {
 
@@ -17,6 +19,7 @@ public class JavaSparkStep {
     final static String default_deploy_mode="--deploy-mode";
     final static String default_class="--class";
     final static String default_config="--conf";
+    final static String default_repo= "--packages";
 
     final  SparkDeployMode deployMode;
     final String masterUrl;
@@ -24,6 +27,7 @@ public class JavaSparkStep {
     final String jarPath;
     final  List<String> args;
     final  List<String> configs;
+    final  List<String> repo;
 
     private JavaSparkStep(
                         String masterUrl,
@@ -31,30 +35,34 @@ public class JavaSparkStep {
                          String mainClass,
                          SparkDeployMode mode,
                             List<String> args,
-                            String ... configs) {
+                            List<String>  configs,
+                        List<String> repo) {
 
             this.masterUrl=masterUrl;
             this.mainClass=mainClass;
             this.jarPath=jarPath;
             this.deployMode=mode;
             this.args=args;
-            this.configs=Arrays.asList(configs);
+            this.configs=configs;
+            this.repo=repo;
     }
 
     @Override
     public String toString() {
 
-        List<String> meta =  new ArrayList<>(Arrays.asList( default_jar,
+        List<String> meta =
+                Stream.of( default_jar,
                 default_spark,
                 default_master,
                 masterUrl,
                 default_deploy_mode,
-                deployMode.name()));
+                deployMode.name()).collect(Collectors.toList());
 
-
-        configs.stream()
-                .forEach(configValue->
-                {
+        if(repo.size()>0){
+            meta.add(default_repo);
+            meta.add(repo.stream().collect(Collectors.joining(",")));
+        }
+        configs.stream().forEach(configValue-> {
             meta.add(default_config);
             meta.add(configValue);
         });
@@ -79,6 +87,12 @@ public class JavaSparkStep {
                meta.add(configValue);
            });
 
+
+           if(repo.size()>0){
+               meta.add(default_repo);
+               meta.add(repo.stream().collect(Collectors.joining(",")));
+           }
+
            meta.add(default_class);
            meta.add(mainClass);
            meta.add(jarPath);
@@ -87,7 +101,8 @@ public class JavaSparkStep {
                    .withJar(default_jar)
                    .withArgs(new ArrayList(meta) {{addAll(args);}});
 
-           return new StepConfig().withActionOnFailure(action)
+           return new StepConfig()
+                   .withActionOnFailure(action)
                    .withName(name)
                    .withHadoopJarStep(sparkStepConf);
        }
@@ -102,20 +117,33 @@ public class JavaSparkStep {
         String jarPath;
         List<String> args=new ArrayList<>();
         List<String> configs=new ArrayList<>();
+        List<String> repo=new ArrayList<>();
 
            public JavaSparkBuilder withMasterUrl(String masterUrl, SparkDeployMode deploymentMode){
                this.masterUrl=masterUrl;
                this.deployMode=deploymentMode;
                return this;
            }
+
            public JavaSparkBuilder withJar(String jarPath){this.jarPath=jarPath; return this;}
+
            public JavaSparkBuilder withMainClass(String mainClass){this.mainClass=mainClass; return this;}
+
            public JavaSparkBuilder addArgs(String argkey,String value){ return this.addArgs(argkey).addArgs(value); }
+
            public JavaSparkBuilder addArgs(String argValue){ this.args.add(argValue); return this;}
+
            public JavaSparkBuilder addConfigs(String confKey,String confValue){
                this.configs.add(String.join("=", confKey,confValue));
                return this;
            }
+
+
+           public JavaSparkBuilder addRepo(String repository){
+               this.repo.add(repository);
+               return this;
+           }
+
            public JavaSparkBuilder addArgsEntry(String argkey,String value){ return this
                    .addArgs(String.join("=",argkey,value)); }
 
@@ -129,7 +157,7 @@ public class JavaSparkStep {
                         jarPath,
                         mainClass,
                         deployMode,
-                        args,configs.toArray(new String[]{}));
+                        args,configs,repo);
 
            }
 

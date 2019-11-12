@@ -364,16 +364,16 @@ public class MyTest {
                 .addArgs("-cmd",String.join(".","mia","app","faicose"))
                 .addArgs("-startDate","2019")
                 .addConfigs("spark.sql.parquet.fs.optimized.committer.optimization-enabled", "true")
+                .addRepo("myrepo")
                 .create();
 
 
+        String stringStep = stepExample
+                .toString();
+
         StepConfig f = stepExample.toEmrStepConfig("ciao", ActionOnFailure.CONTINUE);
 
-        String stringStep = stepExample.toString();
-
-        String expected="command-runner.jar,spark-submit,--master,yarn-cluster,--deploy-mode,cluster," +
-                "--conf,spark.sql.parquet.fs.optimized.committer.optimization-enabled=true," +
-                "--class,mia.app.Main,s3://myApp.jar,-cmd,mia.app.faicose,-startDate,2019";
+        String expected="command-runner.jar,spark-submit,--master,yarn-cluster,--deploy-mode,cluster,--packages,myrepo,--conf,spark.sql.parquet.fs.optimized.committer.optimization-enabled=true,--class,mia.app.Main,s3://myApp.jar,-cmd,mia.app.faicose,-startDate,2019";
 
         Assert.assertTrue(expected.equals(stringStep));
 

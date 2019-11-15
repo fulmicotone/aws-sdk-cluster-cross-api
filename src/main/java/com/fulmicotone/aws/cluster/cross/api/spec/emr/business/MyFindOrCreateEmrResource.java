@@ -471,7 +471,7 @@ public class MyFindOrCreateEmrResource {
         }
 
 
-        public BuilderFull wuthEmrClusterBuilderSupplier(Supplier<MyCluster.MyClusterBuilder> emrBuilder ){
+        public BuilderFull withEmrClusterBuilderSupplier(Supplier<MyCluster.MyClusterBuilder> emrBuilder ){
             this.emrClusterBuilder=emrBuilder;
             return this;
         }

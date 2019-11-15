@@ -6,7 +6,7 @@ import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.MyPipelineObjectF
 
 import java.util.function.Supplier;
 
-public abstract class SparkMaxResourceAllocationPropertySupplier implements Supplier<Property> {
+public  class SparkMaxResourceAllocationPropertySupplier implements Supplier<Property> {
 
     protected static String key="maximizeResourceAllocation";
 

@@ -1,16 +1,9 @@
 package com.fulmicotone.aws.cluster.cross.api;
 
-import com.amazonaws.auth.policy.actions.ElasticMapReduceActions;
-import com.amazonaws.regions.Regions;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatch;
-import com.amazonaws.services.cloudwatch.AmazonCloudWatchClientBuilder;
 import com.amazonaws.services.datapipeline.model.Field;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduce;
-import com.amazonaws.services.elasticmapreduce.AmazonElasticMapReduceClientBuilder;
 import com.amazonaws.services.elasticmapreduce.model.*;
 import com.fulmicotone.aws.cluster.cross.api.builder.MyActivity;
 import com.fulmicotone.aws.cluster.cross.api.builder.MyCluster;
-import com.fulmicotone.aws.cluster.cross.api.function.SupplierParameterizableEmrBuilderWithSparkDefault;
 import com.fulmicotone.aws.cluster.cross.api.function.SupplierParameterizableEmrResourceBuilder;
 import com.fulmicotone.aws.cluster.cross.api.function.SupplierParametrizableSparkDefaultsConfig;
 import com.fulmicotone.aws.cluster.cross.api.function.my.FnGetUniqueResourcesFromActivities;
@@ -28,11 +21,6 @@ import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.MyPipelineObjectF
 import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.SparkDeployMode;
 import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.resource.ClusterHwConf;
 import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.resource.ClusterSecurityConf;
-import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.MyFindOrCreateEmrObservableResource;
-import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter.MyGetterEMRCluster;
-import com.fulmicotone.aws.cluster.cross.api.spec.emr.business.getter.filters.MyEMRClusterFilterActiveNameContains;
-import com.fulmicotone.aws.cluster.cross.api.spec.emr.model.MyEMRScaleUpPolicy;
-import com.fulmicotone.aws.cluster.cross.api.spec.emr.model.MyEMRThresholdBreakBehaviour;
 import org.junit.Assert;
 import org.junit.BeforeClass;
 import org.junit.FixMethodOrder;

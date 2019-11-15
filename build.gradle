@@ -4,7 +4,7 @@ plugins {
 }
 
 group 'com.fulmicotone'
-version 'v0.00.004'
+version 'v0.00.005'
 
 sourceCompatibility = 1.8
 

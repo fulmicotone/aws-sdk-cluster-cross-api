@@ -42,11 +42,11 @@ import static java.time.temporal.ChronoUnit.MILLIS;
  * that will monitor is Idle metric  and if will be triggered will
  * fire a message on the sns topics passed as parameters.
  */
-public class MyFindOrCreateEmrObservableResource {
+public class MyFindOrCreateEmrResource {
 
 
 
-    Logger log = LoggerFactory.getLogger(MyFindOrCreateEmrObservableResource.class);
+    Logger log = LoggerFactory.getLogger(MyFindOrCreateEmrResource.class);
 
     private final AmazonElasticMapReduce emrClient;
 
@@ -80,20 +80,20 @@ public class MyFindOrCreateEmrObservableResource {
 
 
 
-    public MyFindOrCreateEmrObservableResource(AmazonElasticMapReduce emrClient,
-                                               AmazonCloudWatch cloudWatchClient,
-                                               MyCluster.MyClusterBuilder clusterBuilder,
-                                               String resourceName,
-                                               String workerGroup,
-                                               Regions region,
-                                               int indleLimitInSeconds,
-                                               boolean installTaskRunner,
-                                               int nRetry,
-                                               int millisDelay,
-                                               MyEMRScaleUpPolicy policy,
-                                               Tag[] tags,
-                                               MyParams params,
-                                               String... snsTopicArn) {
+    public MyFindOrCreateEmrResource(AmazonElasticMapReduce emrClient,
+                                     AmazonCloudWatch cloudWatchClient,
+                                     MyCluster.MyClusterBuilder clusterBuilder,
+                                     String resourceName,
+                                     String workerGroup,
+                                     Regions region,
+                                     int indleLimitInSeconds,
+                                     boolean installTaskRunner,
+                                     int nRetry,
+                                     int millisDelay,
+                                     MyEMRScaleUpPolicy policy,
+                                     Tag[] tags,
+                                     MyParams params,
+                                     String... snsTopicArn) {
         this.emrClient = emrClient == null ? AmazonElasticMapReduceClientBuilder.defaultClient() : emrClient;
         this.cwClient = cloudWatchClient == null ? AmazonCloudWatchClientBuilder.defaultClient() : cloudWatchClient;
         this.resourceName = resourceName;
@@ -163,6 +163,7 @@ public class MyFindOrCreateEmrObservableResource {
 
 
 
+        if(snsTopicArn.length>0) {
             try {
 
                 final String ji = jobFlowId;
@@ -181,7 +182,11 @@ public class MyFindOrCreateEmrObservableResource {
                                         2,
                                         snsTopicArn))).getResult();
 
-            } catch (Exception e) { throw new MyEMRIsIdleAlarmCreationException(e.toString()); }
+            } catch (Exception e) {
+                throw new MyEMRIsIdleAlarmCreationException(e.toString());
+            }
+
+        }
 
 
 
@@ -381,9 +386,9 @@ public class MyFindOrCreateEmrObservableResource {
         }
 
 
-        public MyFindOrCreateEmrObservableResource build() {
+        public MyFindOrCreateEmrResource build() {
             return
-                    new MyFindOrCreateEmrObservableResource(
+                    new MyFindOrCreateEmrResource(
                             emrClient,
                             cloudWatchClient,
                             emrClusterBuilder.get(),

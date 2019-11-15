@@ -1,4 +1,4 @@
-package com.fulmicotone.aws.cluster.cross.api.utils;
+package com.fulmicotone.aws.cluster.cross.api.utils.properties.generic;
 
 import com.fulmicotone.aws.cluster.cross.api.models.Property;
 import com.fulmicotone.aws.cluster.cross.api.models.enums.PipelineObjectsClasses;
@@ -6,9 +6,9 @@ import com.fulmicotone.aws.cluster.cross.api.spec.datapipeline.MyPipelineObjectF
 
 import java.util.function.Supplier;
 
-public abstract class JavaHomePropertySupplier implements Supplier<Property> {
+public abstract class YarnNodeManagerVMemCheckPropertySupplier implements Supplier<Property> {
 
-    protected static String key="JAVA_HOME";
+    protected static String key="yarn.nodemanager.vmem-check-enabled";
 
     protected  abstract  String value();
 
